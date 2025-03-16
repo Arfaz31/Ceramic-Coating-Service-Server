@@ -30,4 +30,7 @@ export const config = {
   reset_pass_secret: process.env.RESET_PASS_TOKEN,
   reset_pass_expire_in: process.env.RESET_PASS_EXPIRES_IN,
   reset_pass_link: process.env.RESET_PASS_LINK,
+
+  mail_user: process.env.MAIL_USER,
+  mail_pass: process.env.MAIL_PASS,
 };

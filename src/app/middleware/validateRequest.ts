@@ -10,3 +10,15 @@ export const validateRequest = (Schema: AnyZodObject) => {
     next();
   });
 };
+
+export const validateRequestCookies = (schema: AnyZodObject) => {
+  return CatchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const parsedCookies = await schema.parseAsync({
+      cookies: req.cookies,
+    });
+
+    req.cookies = parsedCookies.cookies;
+
+    next();
+  });
+};

@@ -10,7 +10,7 @@ const superAdminData = {
   password: config.SUPERADMIN.PASSWORD,
   gender: config.SUPERADMIN.GENDER,
   role: config.SUPERADMIN.ROLE,
-  isDeleted: config.SUPERADMIN.IS_DELETED,
+  // isDeleted: config.SUPERADMIN.IS_DELETED,
 };
 
 export const seedingSuperAdmin = async () => {

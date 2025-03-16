@@ -51,7 +51,6 @@ const userSchema = new Schema<TUser, UserModel>(
     isDeleted: {
       type: Boolean,
       default: false,
-      required: true,
     },
   },
   {
@@ -80,6 +79,15 @@ userSchema.pre('save', async function (next) {
 
   next();
 });
+
+//pasword compared by bcrypt
+export const isPasswordMatched = async (
+  plainPassword: string,
+  hashedPassword: string,
+): Promise<boolean> => {
+  const isMatched = await bcrypt.compare(plainPassword, hashedPassword);
+  return isMatched;
+};
 
 //check if password changed after the token was issued. if that then the previous jwt token will be invalid
 userSchema.statics.isJWTIssuedBeforePasswordChanged = function (

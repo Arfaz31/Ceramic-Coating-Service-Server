@@ -10,7 +10,7 @@ export type TUser = {
   gender: 'MALE' | 'FEMALE';
   role: keyof typeof USER_ROLE;
   contact: string;
-  address: string;
+  address?: string;
   profileImg?: string;
   isDeleted: boolean;
   passwordChangedAt?: Date;
