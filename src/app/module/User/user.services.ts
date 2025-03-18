@@ -203,10 +203,20 @@ const updateUserProfileData = async (
   }
 };
 
+const softDeleteUserFromDB = async (id: string) => {
+  const result = await User.findByIdAndUpdate(
+    id,
+    { isDeleted: true },
+    { new: true },
+  );
+  return result;
+};
+
 export const UserService = {
   createAdmin,
   getAllUsersFromDB,
   getSingleUserFromDB,
   getMeFromDB,
   updateUserProfileData,
+  softDeleteUserFromDB,
 };

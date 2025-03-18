@@ -49,4 +49,10 @@ router.patch(
   UserController.updateUserProfile,
 );
 
+router.delete(
+  '/soft-delete-user/:id',
+  auth(USER_ROLE.SUPER_ADMIN),
+  UserController.softDeleteUserFromDB,
+);
+
 export const UserRoutes = router;

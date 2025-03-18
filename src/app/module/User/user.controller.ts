@@ -64,10 +64,21 @@ const updateUserProfile = CatchAsync(async (req, res) => {
   });
 });
 
+const softDeleteUserFromDB = CatchAsync(async (req, res) => {
+  const result = await UserService.softDeleteUserFromDB(req.params.id);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'User deleted successfully',
+    data: result,
+  });
+});
+
 export const UserController = {
   createAdmin,
   getAllUsersFromDB,
   getSingleUserFromDB,
   getMeFromDB,
   updateUserProfile,
+  softDeleteUserFromDB,
 };
