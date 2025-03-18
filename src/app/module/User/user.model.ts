@@ -6,10 +6,6 @@ import { config } from '../../config';
 
 const userSchema = new Schema<TUser, UserModel>(
   {
-    name: {
-      type: String,
-      required: true,
-    },
     userName: {
       type: String,
       required: true,
@@ -25,11 +21,7 @@ const userSchema = new Schema<TUser, UserModel>(
       type: String,
       required: true,
     },
-    gender: {
-      type: String,
-      enum: ['MALE', 'FEMALE'],
-      required: true,
-    },
+
     role: {
       type: String,
       enum: Object.values(USER_ROLE),
@@ -39,9 +31,7 @@ const userSchema = new Schema<TUser, UserModel>(
       type: String,
       required: true,
     },
-    address: {
-      type: String,
-    },
+
     profileImg: {
       type: String,
     },

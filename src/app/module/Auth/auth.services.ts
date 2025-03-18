@@ -6,28 +6,73 @@ import * as bcrypt from 'bcrypt';
 import { jwtHelpers } from '../../utils/JWTHelpers';
 import { config } from '../../config';
 import { JwtPayload, Secret } from 'jsonwebtoken';
-import { TUser } from '../User/user.interface';
 
 import { v4 as uuidv4 } from 'uuid';
 import { sendEmail } from '../../utils/sendMail';
+import { startSession } from 'mongoose';
+import { USER_ROLE } from '../User/user.constant';
+import { Customer } from '../Customer/customer.model';
 
-const signUp = async (payload: TUser) => {
-  const user = await User.findOne({ email: payload.email });
-  if (user) {
-    throw new AppError(httpStatus.NOT_FOUND, 'You already have an account');
+interface TCustomer {
+  name: string;
+  email: string;
+  password: string;
+  contact: string;
+  gender: string;
+  address?: string;
+}
+
+export const signUp = async (payload: TCustomer) => {
+  const session = await startSession();
+  session.startTransaction();
+
+  try {
+    const existingUser = await User.findOne({ email: payload.email }).session(
+      session,
+    );
+    if (existingUser) {
+      throw new AppError(httpStatus.BAD_REQUEST, 'You already have an account');
+    }
+
+    // Generate unique username
+    const emailPrefix = payload.email.split('@')[0];
+    const shortUuid = uuidv4().slice(0, 6);
+    const userName = `${emailPrefix}_${shortUuid}`;
+
+    const userData = {
+      userName: userName,
+      email: payload.email,
+      password: payload.password,
+      role: USER_ROLE.CUSTOMER,
+      contact: payload.contact,
+    };
+
+    // Create User inside the transaction
+    const newUser = await User.create([userData], { session });
+
+    // Prepare Customer Data
+    const customerData = {
+      userId: newUser[0]._id,
+      name: payload.name,
+      userName: userName,
+      email: payload.email,
+      contact: payload.contact,
+      gender: payload.gender,
+      address: payload.address,
+    };
+
+    // Create Customer inside the transaction
+    await Customer.create([customerData], { session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return newUser[0]; // Return the created user
+  } catch (error) {
+    await session.abortTransaction(); // Rollback changes if an error occurs
+    session.endSession();
+    throw error;
   }
-
-  // Extract portion of the email before '@'
-  const emailPrefix = payload.email.split('@')[0];
-
-  // Generate a short UUID (first 6 characters for uniqueness)
-  const shortUuid = uuidv4().slice(0, 6);
-
-  // Generate username using email prefix + UUID
-  payload.userName = `${emailPrefix}_${shortUuid}`;
-
-  const newUser = await User.create(payload);
-  return newUser;
 };
 
 const login = async (payload: TAuth) => {
@@ -196,7 +241,7 @@ const resetPassword = async (
   payload: { email: string; newPassword: string },
   token: string,
 ) => {
-  console.log('payload:', payload);
+  // console.log('payload:', payload);
   const user = await User.findOne({ email: payload?.email }).select(
     '+password',
   );
