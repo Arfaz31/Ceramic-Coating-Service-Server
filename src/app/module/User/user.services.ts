@@ -3,8 +3,10 @@ import { User } from './user.model';
 import AppError from '../../Error/AppError';
 import httpStatus from 'http-status';
 import { v4 as uuidv4 } from 'uuid';
-import { USER_ROLE } from './user.constant';
+import { USER_ROLE, userSearchableFields } from './user.constant';
 import { Admin } from '../Admin/admin.model';
+import QueryBuilder from '../../Builder/QueryBuilder';
+import { Customer } from '../Customer/customer.model';
 
 interface TAdmin {
   name: string;
@@ -68,4 +70,42 @@ const createAdmin = async (payload: TAdmin) => {
   }
 };
 
-export const UserService = { createAdmin };
+const getAllUsersFromDB = async (query: Record<string, unknown>) => {
+  const userQuery = new QueryBuilder(User.find(), query)
+    .search(userSearchableFields)
+    .filter()
+    .sort()
+    .paginate()
+    .fields();
+
+  const result = await userQuery.modelQuery;
+  const meta = await userQuery.countTotal();
+  return {
+    result,
+    meta,
+  };
+};
+
+const getSingleUserFromDB = async (id: string) => {
+  const result = await User.findById(id);
+  return result;
+};
+
+const getMeFromDB = async (id: string, role: string) => {
+  let result = null;
+  if (role === USER_ROLE.CUSTOMER) {
+    result = await Customer.findOne({ id });
+  }
+  if (role === USER_ROLE.ADMIN) {
+    result = await Admin.findOne({ id });
+  }
+
+  return result;
+};
+
+export const UserService = {
+  createAdmin,
+  getAllUsersFromDB,
+  getSingleUserFromDB,
+  getMeFromDB,
+};

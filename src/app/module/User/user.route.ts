@@ -11,4 +11,22 @@ router.post(
   UserController.createAdmin,
 );
 
+router.get(
+  '/all-users',
+  auth(USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN),
+  UserController.getAllUsersFromDB,
+);
+
+router.get(
+  '/me',
+  auth(...Object.values(USER_ROLE)),
+  UserController.getMeFromDB,
+);
+
+router.get(
+  '/single-user/:id',
+  auth(USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN),
+  UserController.getSingleUserFromDB,
+);
+
 export const UserRoutes = router;
