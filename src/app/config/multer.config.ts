@@ -31,6 +31,12 @@ export const uploadSingleImage = upload.fields([
   { name: 'image', maxCount: 1 },
 ]);
 
+export const uploadMultipleImages = (
+  fields: { name: string; maxCount: number }[],
+) => {
+  return upload.fields(fields);
+};
+
 // export const uploadMultipleImage = upload.fields([
 //   { name: 'postImages', maxCount: 10 },
 // ]);
