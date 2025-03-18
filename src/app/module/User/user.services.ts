@@ -7,6 +7,8 @@ import { USER_ROLE, userSearchableFields } from './user.constant';
 import { Admin } from '../Admin/admin.model';
 import QueryBuilder from '../../Builder/QueryBuilder';
 import { Customer } from '../Customer/customer.model';
+import { TImageFile } from '../../interface/image.interface';
+import { JwtPayload } from 'jsonwebtoken';
 
 interface TAdmin {
   name: string;
@@ -14,6 +16,14 @@ interface TAdmin {
   password: string;
   contact: string;
   gender: string;
+  address?: string;
+}
+
+interface TUpdateUser {
+  targetUserId?: string;
+  name?: string;
+  contact?: string;
+  gender?: string;
   address?: string;
 }
 
@@ -103,9 +113,100 @@ const getMeFromDB = async (id: string, role: string) => {
   return result;
 };
 
+const updateUserProfileData = async (
+  user: JwtPayload, // Logged-in user
+  data: TUpdateUser,
+  profileImg?: TImageFile,
+) => {
+  const { id: currentUserId, role } = user;
+
+  let targetUserId = currentUserId; // Default to current user
+
+  if (role === USER_ROLE.SUPER_ADMIN && data.targetUserId) {
+    targetUserId = data.targetUserId; // Allow SUPER_ADMIN to target other users
+  }
+
+  const targetUser = await User.findById(targetUserId);
+  if (!targetUser) {
+    throw new AppError(httpStatus.BAD_REQUEST, 'User not found');
+  }
+
+  // Prevent ADMIN and CUSTOMER from updating other users
+  if (
+    (role === USER_ROLE.ADMIN || role === USER_ROLE.CUSTOMER) &&
+    targetUserId !== currentUserId
+  ) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      'You are not allowed to update other users’ profiles',
+    );
+  }
+
+  const profileImagePath = (profileImg && profileImg.path) || '';
+
+  // User model update data
+  const userData = {
+    contact: data.contact,
+    profileImg: profileImagePath,
+  };
+
+  // Start a transaction
+  const session = await startSession();
+  session.startTransaction();
+
+  try {
+    // Update the User model
+    await User.findByIdAndUpdate(targetUserId, userData, {
+      new: true,
+      session,
+    });
+
+    let updatedProfile = null;
+
+    // Update role-specific models
+    if (targetUser.role === USER_ROLE.ADMIN) {
+      const adminData = {
+        name: data.name,
+        contact: data.contact,
+        gender: data.gender,
+        address: data.address,
+        profileImg: profileImagePath,
+      };
+      updatedProfile = await Admin.findOneAndUpdate(
+        { userId: targetUserId },
+        adminData,
+        { new: true, session },
+      );
+    } else if (targetUser.role === USER_ROLE.CUSTOMER) {
+      const customerData = {
+        name: data.name,
+        contact: data.contact,
+        gender: data.gender,
+        address: data.address,
+        profileImg: profileImagePath,
+      };
+      updatedProfile = await Customer.findOneAndUpdate(
+        { userId: targetUserId },
+        customerData,
+        { new: true, session },
+      );
+    }
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return updatedProfile;
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
+};
+
 export const UserService = {
   createAdmin,
   getAllUsersFromDB,
   getSingleUserFromDB,
   getMeFromDB,
+  updateUserProfileData,
 };

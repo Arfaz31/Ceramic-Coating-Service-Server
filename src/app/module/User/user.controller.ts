@@ -1,3 +1,4 @@
+import { TImageFiles } from '../../interface/image.interface';
 import CatchAsync from '../../utils/catchAsync';
 import { sendResponse } from '../../utils/sendResponse';
 import { UserService } from './user.services';
@@ -44,9 +45,29 @@ const getMeFromDB = CatchAsync(async (req, res) => {
   });
 });
 
+const updateUserProfile = CatchAsync(async (req, res) => {
+  const files = req.files as TImageFiles;
+
+  // Extract single files from the fields
+  const profilePhoto = files?.image ? files.image[0] : undefined;
+  const result = await UserService.updateUserProfileData(
+    req.user,
+    req.body,
+    profilePhoto,
+  );
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: 'Profile updated successfully',
+    data: result,
+  });
+});
+
 export const UserController = {
   createAdmin,
   getAllUsersFromDB,
   getSingleUserFromDB,
   getMeFromDB,
+  updateUserProfile,
 };
